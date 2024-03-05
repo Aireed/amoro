@@ -164,7 +164,7 @@ public class TableController {
     Preconditions.checkArgument(
         hmsClientPool != null,
         String.format(
-            "catalog {} is not a mixed hive catalog or a external catalog support hive, "
+            "catalog {} is neither a mixed hive catalog nor a external catalog support hive, "
                 + "so not support load hive tables",
             catalog));
 
