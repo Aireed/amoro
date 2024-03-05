@@ -247,7 +247,10 @@ public class TerminalManager {
       }
     } else if (catalogType.equalsIgnoreCase(CatalogType.HIVE.name())
         || catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())) {
-      if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_HIVE.name())
+      if (tableFormats.length() > 1) {
+        // return unified when having multi formats
+        return "unified";
+      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_HIVE.name())
           || StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {
         return "arctic";
       } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.ICEBERG.name())) {

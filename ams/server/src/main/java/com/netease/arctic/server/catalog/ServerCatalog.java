@@ -22,10 +22,14 @@ import com.netease.arctic.AmoroTable;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.server.exception.IllegalMetadataException;
+import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
+import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
+import com.netease.arctic.server.table.TableMetadata;
 
 import java.util.List;
+import java.util.Optional;
 
 public abstract class ServerCatalog extends PersistentBase {
 
@@ -70,4 +74,18 @@ public abstract class ServerCatalog extends PersistentBase {
                     new IllegalMetadataException(
                         "Catalog " + name() + " has more than one database or table")));
   }
+
+  public TableMetadata loadTableMetadata(String database, String table) {
+    return Optional.ofNullable(
+            getAs(
+                TableMetaMapper.class,
+                mapper -> mapper.selectTableMetaByName(name(), database, table)))
+        .orElseThrow(
+            () ->
+                new ObjectNotExistsException(
+                    com.netease.arctic.table.TableIdentifier.of(name(), database, table)
+                        .toString()));
+  }
+
+  public abstract TableMetadata createTable(TableMetadata tableMetadata);
 }

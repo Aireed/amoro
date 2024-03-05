@@ -184,9 +184,12 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
   @Override
   public TableMetadata loadTableMetadata(TableIdentifier tableIdentifier) {
-    validateTableExists(tableIdentifier);
-    InternalCatalog internalCatalog = getInternalCatalog(tableIdentifier.getCatalog());
-    return internalCatalog.loadTableMetadata(
+    ServerCatalog serverCatalog = getServerCatalog(tableIdentifier.getCatalog());
+
+    if (serverCatalog instanceof InternalCatalog) {
+      validateTableExists(tableIdentifier);
+    }
+    return serverCatalog.loadTableMetadata(
         tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
@@ -212,7 +215,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     checkStarted();
     validateTableNotExists(tableMetadata.getTableIdentifier().getIdentifier());
 
-    InternalCatalog catalog = getInternalCatalog(catalogName);
+    ServerCatalog catalog = getServerCatalog(catalogName);
     TableMetadata metadata = catalog.createTable(tableMetadata);
 
     triggerTableAdded(catalog, metadata.getTableIdentifier());
