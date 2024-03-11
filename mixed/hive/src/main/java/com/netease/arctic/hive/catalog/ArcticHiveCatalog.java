@@ -18,8 +18,13 @@
 
 package com.netease.arctic.hive.catalog;
 
+import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS;
+import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
+import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
+
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.CachedHiveClientPool;
@@ -27,12 +32,14 @@ import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.ConvertStructUtil;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
@@ -41,14 +48,18 @@ import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of {@link com.netease.arctic.catalog.ArcticCatalog} to support Hive table as base
@@ -100,10 +111,66 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     }
   }
 
+  public static void putNotNullProperties(
+      Map<String, String> properties, String key, String value) {
+    if (value != null) {
+      properties.put(key, value);
+    }
+  }
+
   /** HMS is case-insensitive for table name and database */
   @Override
   protected TableMeta getArcticTableMeta(TableIdentifier identifier) {
-    return super.getArcticTableMeta(identifier.toLowCaseIdentifier());
+    org.apache.hadoop.hive.metastore.api.Table hiveTable =
+        HiveTableUtil.loadHmsTable(this.hiveClientPool, identifier);
+    Map<String, String> hiveParameters = hiveTable.getParameters();
+    String arcticRootLocation = hiveParameters.get(ARCTIC_TABLE_ROOT_LOCATION);
+    if (arcticRootLocation == null) {
+      // 通过hive location 获取 base 的目录
+      String hiveRootLocation = hiveTable.getSd().getLocation();
+      if (hiveRootLocation.endsWith("/hive")) {
+        arcticRootLocation = hiveRootLocation.substring(0, hiveRootLocation.length() - 5);
+      } else {
+        arcticRootLocation = hiveRootLocation;
+      }
+    }
+
+    String baseLocation = arcticRootLocation + "/base";
+    String changeLocation = arcticRootLocation + "/change";
+    Table baseIcebergTable = this.tables.loadTableByLocation(baseLocation);
+    Map<String, String> properties = baseIcebergTable.properties();
+
+    // 构建TableMeta
+    TableMeta tableMeta = new TableMeta();
+    tableMeta.setTableIdentifier(identifier.buildTableIdentifier());
+
+    Map<String, String> locations = new HashMap<>();
+    putNotNullProperties(locations, MetaTableProperties.LOCATION_KEY_TABLE, arcticRootLocation);
+    putNotNullProperties(locations, MetaTableProperties.LOCATION_KEY_CHANGE, changeLocation);
+    putNotNullProperties(locations, MetaTableProperties.LOCATION_KEY_BASE, baseLocation);
+    tableMeta.setLocations(locations);
+
+    // fill primary key
+    Map<String, String> newProperties = new HashMap<>(properties);
+    tableMeta.setProperties(newProperties);
+    if (hiveParameters != null) {
+      String primaryKey = hiveParameters.get(ARCTIC_TABLE_PRIMARY_KEYS);
+      // primary key info come from hive properties
+      if (StringUtils.isNotBlank(primaryKey)) {
+        com.netease.arctic.ams.api.PrimaryKeySpec keySpec =
+            new com.netease.arctic.ams.api.PrimaryKeySpec();
+        List<String> fields =
+            Arrays.stream(primaryKey.split(PRIMARY_KEY_COLUMN_JOIN_DELIMITER))
+                .collect(Collectors.toList());
+        keySpec.setFields(fields);
+        tableMeta.setKeySpec(keySpec);
+      }
+    }
+
+    tableMeta.setFormat(TableFormat.MIXED_HIVE.toString());
+    return tableMeta;
+    // todo: we need construct TableMeta from HiveTableProperties
+    //    return super.getArcticTableMeta(identifier.toLowCaseIdentifier());
   }
 
   @Override

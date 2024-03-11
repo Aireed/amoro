@@ -76,6 +76,10 @@ public class MixedTables {
     }
   }
 
+  public Table loadTableByLocation(String baseLocation) {
+    return tableMetaStore.doAs(() -> tables.load(baseLocation));
+  }
+
   protected KeyedTable loadKeyedTable(TableMeta tableMeta) {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
