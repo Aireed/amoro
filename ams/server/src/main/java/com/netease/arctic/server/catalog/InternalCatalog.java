@@ -123,7 +123,6 @@ public abstract class InternalCatalog extends ServerCatalog {
 
   public abstract <O> InternalTableHandler<O> newTableHandler(String database, String tableName);
 
-  @Override
   public TableMetadata createTable(TableMetadata tableMetadata) {
     validateTableIdentifier(tableMetadata.getTableIdentifier().getIdentifier());
     ServerTableIdentifier tableIdentifier = tableMetadata.getTableIdentifier();

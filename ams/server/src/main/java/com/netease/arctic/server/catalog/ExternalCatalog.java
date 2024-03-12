@@ -25,18 +25,13 @@ import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.formats.mixed.MixedCatalog;
+import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HMSClientPool;
-import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
-import com.netease.arctic.server.exception.IllegalMetadataException;
-import com.netease.arctic.server.exception.ObjectNotExistsException;
-import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -53,6 +48,7 @@ public class ExternalCatalog extends ServerCatalog {
   TableMetaStore tableMetaStore;
   private Pattern tableFilterPattern;
   private Pattern databaseFilterPattern;
+  private HMSClientPool hiveClientPool;
 
   protected ExternalCatalog(CatalogMeta metadata) {
     super(metadata);
@@ -62,6 +58,8 @@ public class ExternalCatalog extends ServerCatalog {
             () -> new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap()));
     updateTableFilter(metadata);
     updateDatabaseFilter(metadata);
+    this.hiveClientPool =
+        new CachedHiveClientPool(this.tableMetaStore, metadata.getCatalogProperties());
   }
 
   public ArcticCatalog getArcticCatalog() {
@@ -77,12 +75,7 @@ public class ExternalCatalog extends ServerCatalog {
   }
 
   public HMSClientPool getHMSClientPool() {
-    // external catalog also need show hive tables
-    ArcticCatalog arcticCatalog = getArcticCatalog();
-    if (arcticCatalog instanceof ArcticHiveCatalog) {
-      return ((ArcticHiveCatalog) arcticCatalog).getHMSClient();
-    }
-    return null;
+    return this.hiveClientPool;
   }
 
   public void syncTable(String database, String tableName, TableFormat format) {
@@ -166,44 +159,6 @@ public class ExternalCatalog extends ServerCatalog {
   @Override
   public AmoroTable<?> loadTable(String database, String tableName) {
     return doAs(() -> unifiedCatalog.loadTable(database, tableName));
-  }
-
-  protected void validateTableIdentifier(TableIdentifier tableIdentifier) {
-    if (!name().equals(tableIdentifier.getCatalog())) {
-      throw new IllegalMetadataException("Catalog name is error in table identifier");
-    }
-  }
-
-  private String getDatabaseDesc(String database) {
-    return name() + '.' + database;
-  }
-
-  protected void increaseDatabaseTableCount(String databaseName) {
-    // do not handle database operations
-  }
-
-  @Override
-  public TableMetadata createTable(TableMetadata tableMetadata) {
-    // catalog which support mixed hive/mixed iceberg format can createTable.
-    validateTableIdentifier(tableMetadata.getTableIdentifier().getIdentifier());
-    ServerTableIdentifier tableIdentifier = tableMetadata.getTableIdentifier();
-    doAsTransaction(
-        () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTable(tableIdentifier)),
-        () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTableMeta(tableMetadata)),
-        () ->
-            doAsExisted(
-                CatalogMetaMapper.class,
-                mapper -> mapper.incTableCount(1, name()),
-                () -> new ObjectNotExistsException(name())),
-        () -> increaseDatabaseTableCount(tableIdentifier.getDatabase()));
-
-    return getAs(
-        TableMetaMapper.class,
-        mapper ->
-            mapper.selectTableMetaByName(
-                tableIdentifier.getCatalog(),
-                tableIdentifier.getDatabase(),
-                tableIdentifier.getTableName()));
   }
 
   private void updateDatabaseFilter(CatalogMeta metadata) {
