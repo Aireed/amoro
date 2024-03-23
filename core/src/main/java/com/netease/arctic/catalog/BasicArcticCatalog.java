@@ -314,6 +314,17 @@ public class BasicArcticCatalog implements ArcticCatalog {
       return tables.createTableByMeta(tableMeta, schema, primaryKeySpec, partitionSpec);
     }
 
+    protected void checkAmsTableMetadata() {
+      try {
+        client.getTable(identifier.buildTableIdentifier());
+        throw new org.apache.iceberg.exceptions.AlreadyExistsException("table already exist");
+      } catch (NoSuchObjectException e) {
+        checkProperties();
+      } catch (TException e) {
+        throw new IllegalStateException("failed when load table", e);
+      }
+    }
+
     protected void doCreateCheck() {
       if (primaryKeySpec.primaryKeyExisted()) {
         primaryKeySpec
@@ -333,14 +344,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
           .findFirst()
           .orElseThrow(() -> new NoSuchDatabaseException(identifier.getDatabase()));
 
-      try {
-        client.getTable(identifier.buildTableIdentifier());
-        throw new org.apache.iceberg.exceptions.AlreadyExistsException("table already exist");
-      } catch (NoSuchObjectException e) {
-        checkProperties();
-      } catch (TException e) {
-        throw new IllegalStateException("failed when load table", e);
-      }
+      checkAmsTableMetadata();
     }
 
     protected void checkProperties() {
