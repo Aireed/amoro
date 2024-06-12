@@ -19,7 +19,7 @@
 package org.apache.amoro.spark
 
 import org.apache.amoro.spark.sql.catalyst.analysis
-import org.apache.amoro.spark.sql.catalyst.analysis.{QueryWithConstraintCheck, ResolveArcticCommand, ResolveMergeIntoArcticTableReferences, RewriteArcticCommand, RewriteArcticMergeIntoTable}
+import org.apache.amoro.spark.sql.catalyst.analysis.{MixedFormatAlignRowLevelCommandAssignments, QueryWithConstraintCheck, ResolveArcticCommand, ResolveMergeIntoArcticTableReferences, RewriteArcticCommand, RewriteArcticMergeIntoTable}
 import org.apache.amoro.spark.sql.catalyst.optimize.{OptimizeWriteRule, RewriteAppendArcticTable, RewriteDeleteFromArcticTable, RewriteUpdateArcticTable}
 import org.apache.amoro.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
 import org.apache.amoro.spark.sql.execution
@@ -39,6 +39,7 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     // resolve arctic command
     extensions.injectResolutionRule { spark => ResolveArcticCommand(spark) }
     extensions.injectResolutionRule { spark => ResolveMergeIntoArcticTableReferences(spark) }
+    extensions.injectResolutionRule { _ => MixedFormatAlignRowLevelCommandAssignments }
     extensions.injectResolutionRule { spark => RewriteArcticMergeIntoTable(spark) }
 
     extensions.injectPostHocResolutionRule(spark => RewriteArcticCommand(spark))
