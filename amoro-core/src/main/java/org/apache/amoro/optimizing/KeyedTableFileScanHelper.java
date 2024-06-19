@@ -203,11 +203,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     if (baseSnapshotId != INVALID_SNAPSHOT_ID) {
       baseScanResult =
           CloseableIterable.transform(
-                  baseTable
-                          .newScan()
-                          .useSnapshot(baseSnapshotId)
-                          .filter(partitionFilter)
-                          .planFiles(),
+              baseTable.newScan().useSnapshot(baseSnapshotId).filter(partitionFilter).planFiles(),
               fileScanTask -> {
                 DataFile dataFile = wrapBaseFile(fileScanTask.file());
                 List<ContentFile<?>> deleteFiles = new ArrayList<>(fileScanTask.deletes());

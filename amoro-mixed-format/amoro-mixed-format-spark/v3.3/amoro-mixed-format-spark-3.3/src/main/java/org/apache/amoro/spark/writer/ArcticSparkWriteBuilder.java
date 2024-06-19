@@ -111,6 +111,8 @@ public class ArcticSparkWriteBuilder
               return asDynamicOverwrite();
             case UPSERT:
               return asUpsertWrite();
+            case REWRITE_FILES:
+              return asRewriteFiles(rewrittenFileSetId);
             default:
               throw new UnsupportedOperationException("unsupported write mode: " + writeMode);
           }

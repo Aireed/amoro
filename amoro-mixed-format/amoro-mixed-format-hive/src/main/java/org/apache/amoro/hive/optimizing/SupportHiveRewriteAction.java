@@ -18,6 +18,7 @@
 
 package org.apache.amoro.hive.optimizing;
 
+import org.apache.amoro.formats.mixed.MixedSnapshot;
 import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.optimizing.BasicRewriteAction;
 import org.apache.amoro.optimizing.KeyedTablePlanner;
@@ -55,20 +56,23 @@ public abstract class SupportHiveRewriteAction extends BasicRewriteAction {
   public RewriteCommitter committer() {
     StructLikeMap<Long> lastPartitionSequence =
         table.isKeyedTable() ? ((KeyedTablePlanner) planner).lastPartitionSequence() : null;
+
+    MixedSnapshot snapshot = (MixedSnapshot) planner.tableSnapshot();
+    Long snapshotId = snapshot.getBaseSnapshotId();
     if (TableTypeUtil.isHive(getTable())) {
       return new SupportHiveRewriteCommitter(
           getTable(),
           planner.baseStoreRewritePartition(),
           planner.allRewritePartition(),
           planner.rewriteFiles(),
-          planner.tableSnapshot().id(),
+          snapshotId,
           lastPartitionSequence);
     } else {
       return new MixFormatRewriteCommitter(
           getTable(),
           planner.allRewritePartition(),
           planner.rewriteFiles(),
-          Long.valueOf(planner.tableSnapshot().id()),
+          snapshotId,
           lastPartitionSequence);
     }
   }

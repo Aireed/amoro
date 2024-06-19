@@ -110,7 +110,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   @Override
   public BatchWrite asRewriteFiles(String rewrittenFileSetId) {
-    return null;
+    return new RewriteFilesWriter(rewrittenFileSetId);
   }
 
   private class RewriteFilesWriter extends BaseBatchWrite {

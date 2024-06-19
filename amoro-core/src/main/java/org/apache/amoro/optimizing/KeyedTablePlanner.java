@@ -36,7 +36,6 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.relocated.com.google.common.collect.ListMultimap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -45,8 +44,9 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.BinPacking;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.StructLikeMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -59,6 +59,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class KeyedTablePlanner extends OptimizingPlanner {
+  private static Logger LOG = LoggerFactory.getLogger("KeyedTablePlanner");
 
   private final TableFileScanHelper scanHelper;
   private final int lookBack;
@@ -108,20 +109,27 @@ public class KeyedTablePlanner extends OptimizingPlanner {
 
   @Override
   public CloseableIterable<CombinedScanTask> planFiles() {
+    CloseableIterable<TableFileScanHelper.FileScanResult> fileScanResultsIter =
+        scanHelper.withPartitionFilter(filter).scan();
+    List<TableFileScanHelper.FileScanResult> scanResultList = new ArrayList<>();
+    // general a new iterable
+    fileScanResultsIter.forEach(item -> scanResultList.add(item));
     CloseableIterable<TableFileScanHelper.FileScanResult> fileScanResults =
-            scanHelper.withPartitionFilter(filter).scan();
+        CloseableIterable.withNoopClose(scanResultList);
 
     RewriteFilter rewriteFileFilter = rewriteFileFilter(fileScanResults);
     needRewritePartition = rewriteFileFilter.needRewritePartition();
 
     rewriteFiles =
         CloseableIterable.filter(
-                fileScanResults, (result) -> rewriteFileFilter.test(result.file()));
+            fileScanResults, (result) -> rewriteFileFilter.test(result.file()));
+
     rewriteFiles.forEach(
         fileScanResult -> allRewritePartition.add(fileScanResult.file().partition()));
 
     Map<StructLike, Collection<TableFileScanHelper.FileScanResult>> partitionFiles =
         groupFilesByPartition(rewriteFiles);
+
     Map<StructLike, List<NodeFileScanTask>> fileScanTasks =
         partitionFiles.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey, e -> partitionNodeTask(e.getValue())));
