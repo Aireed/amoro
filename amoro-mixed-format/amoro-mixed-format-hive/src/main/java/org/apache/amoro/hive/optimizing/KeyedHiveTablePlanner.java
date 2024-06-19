@@ -16,29 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spark.writer;
+package org.apache.amoro.hive.optimizing;
 
-public enum WriteMode {
-  OVERWRITE_BY_FILTER("overwrite-by-filter"),
-  OVERWRITE_DYNAMIC("overwrite-dynamic"),
-  APPEND("append"),
-  UPSERT("upsert"),
-  REWRITE_FILES("rewrite-files");
+import org.apache.amoro.optimizing.KeyedTablePlanner;
+import org.apache.amoro.optimizing.RewriteFilter;
+import org.apache.amoro.optimizing.TableFileScanHelper;
+import org.apache.amoro.table.MixedTable;
+import org.apache.iceberg.io.CloseableIterable;
 
-  public static final String WRITE_MODE_KEY = "write-mode";
+public class KeyedHiveTablePlanner extends KeyedTablePlanner {
 
-  public final String mode;
-
-  WriteMode(String mode) {
-    this.mode = mode;
+  public KeyedHiveTablePlanner(MixedTable table) {
+    super(table);
   }
 
-  public static WriteMode getWriteMode(String mode) {
-    for (WriteMode m : values()) {
-      if (m.mode.equalsIgnoreCase(mode)) {
-        return m;
-      }
-    }
-    throw new IllegalArgumentException("Invalid write mode: " + mode);
+  @Override
+  public RewriteFilter rewriteFileFilter(
+      CloseableIterable<TableFileScanHelper.FileScanResult> fileScanResults) {
+    return new HiveRewriteFilter(table, fileScanResults);
   }
 }

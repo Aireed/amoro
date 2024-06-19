@@ -267,7 +267,13 @@ public class SparkUnifiedCatalogBase implements TableCatalog, SupportsNamespaces
 
   @Override
   public Procedure loadProcedure(Identifier ident) throws NoSuchProcedureException {
-    TableCatalog tableCatalog = tableCatalog(TableFormat.ICEBERG);
+    String[] namespace = ident.namespace();
+    TableCatalog tableCatalog = null;
+    if (namespace.length == 1 && namespace[0].equalsIgnoreCase("action")) {
+      tableCatalog = tableCatalog(TableFormat.MIXED_HIVE);
+    } else {
+      tableCatalog = tableCatalog(TableFormat.ICEBERG);
+    }
     ProcedureCatalog procedureCatalog = (ProcedureCatalog) tableCatalog;
     return procedureCatalog.loadProcedure(ident);
   }

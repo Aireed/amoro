@@ -19,6 +19,7 @@
 package org.apache.amoro.spark.writer;
 
 import static org.apache.amoro.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
+import static org.apache.amoro.spark.writer.WriteTaskCommit.files;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS;
@@ -34,6 +35,7 @@ import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.op.OverwriteBaseFiles;
 import org.apache.amoro.op.RewritePartitions;
+import org.apache.amoro.optimizing.FileRewriteCoordinator;
 import org.apache.amoro.spark.io.TaskWriters;
 import org.apache.amoro.spark.sql.utils.RowDeltaUtils;
 import org.apache.amoro.table.KeyedTable;
@@ -43,6 +45,7 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
@@ -105,6 +108,31 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     return new UpsertWrite();
   }
 
+  @Override
+  public BatchWrite asRewriteFiles(String rewrittenFileSetId) {
+    return null;
+  }
+
+  private class RewriteFilesWriter extends BaseBatchWrite {
+
+    private final String fileSetID;
+
+    private RewriteFilesWriter(String fileSetID) {
+      this.fileSetID = fileSetID;
+    }
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo physicalWriteInfo) {
+      return new BaseWriterFactory(table, dsSchema, txId, hiveSubdirectory, orderedWriter);
+    }
+
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      FileRewriteCoordinator coordinator = FileRewriteCoordinator.get();
+      coordinator.stageRewrite(table.baseTable(), fileSetID, ImmutableSet.copyOf(files(messages)));
+    }
+  }
+
   private abstract class BaseBatchWrite implements BatchWrite {
 
     protected TableBlockerManager tableBlockerManager;
@@ -114,7 +142,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     public void abort(WriterCommitMessage[] messages) {
       try {
         Map<String, String> props = table.properties();
-        Tasks.foreach(WriteTaskCommit.files(messages))
+        Tasks.foreach(files(messages))
             .retry(
                 PropertyUtil.propertyAsInt(props, COMMIT_NUM_RETRIES, COMMIT_NUM_RETRIES_DEFAULT))
             .exponentialBackoff(
@@ -150,6 +178,8 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       ArrayList<BlockableOperation> operations = Lists.newArrayList();
       operations.add(BlockableOperation.BATCH_WRITE);
       operations.add(BlockableOperation.OPTIMIZE);
+      operations.add(BlockableOperation.ONLINE_OPTIMIZE);
+
       try {
         this.block = tableBlockerManager.block(operations);
       } catch (OperationConflictException e) {
@@ -171,7 +201,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     public void commit(WriterCommitMessage[] messages) {
       checkBlocker(tableBlockerManager);
       AppendFiles append = table.changeTable().newAppend();
-      for (DataFile file : WriteTaskCommit.files(messages)) {
+      for (DataFile file : files(messages)) {
         append.appendFile(file);
       }
       append.commit();
@@ -193,7 +223,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       RewritePartitions rewritePartitions = table.newRewritePartitions();
       rewritePartitions.updateOptimizedSequenceDynamically(txId);
 
-      for (DataFile file : WriteTaskCommit.files(messages)) {
+      for (DataFile file : files(messages)) {
         rewritePartitions.addDataFile(file);
       }
       rewritePartitions.commit();
@@ -222,7 +252,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       overwriteBaseFiles.updateOptimizedSequenceDynamically(txId);
       overwriteBaseFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
 
-      for (DataFile file : WriteTaskCommit.files(messages)) {
+      for (DataFile file : files(messages)) {
         overwriteBaseFiles.addFile(file);
       }
       overwriteBaseFiles.commit();
@@ -242,7 +272,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     public void commit(WriterCommitMessage[] messages) {
       checkBlocker(tableBlockerManager);
       AppendFiles append = table.changeTable().newAppend();
-      for (DataFile file : WriteTaskCommit.files(messages)) {
+      for (DataFile file : files(messages)) {
         append.appendFile(file);
       }
       append.commit();

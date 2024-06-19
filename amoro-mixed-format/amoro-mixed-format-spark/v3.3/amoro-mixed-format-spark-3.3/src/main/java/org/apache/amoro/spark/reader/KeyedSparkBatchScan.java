@@ -19,6 +19,7 @@
 package org.apache.amoro.spark.reader;
 
 import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.optimizing.ScanTaskSetManager;
 import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScan;
 import org.apache.amoro.scan.KeyedTableScanTask;
@@ -34,6 +35,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.spark.SparkSchemaUtil;
+import org.apache.iceberg.spark.SparkWriteOptions;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.connector.read.Batch;
 import org.apache.spark.sql.connector.read.InputPartition;
@@ -64,6 +66,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
   private final List<Expression> filterExpressions;
   private StructType readSchema = null;
   private List<CombinedScanTask> tasks = null;
+  private final String scanTaskId;
 
   KeyedSparkBatchScan(
       KeyedTable table,
@@ -79,6 +82,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
     this.caseSensitive = caseSensitive;
     this.expectedSchema = expectedSchema;
     this.filterExpressions = filters;
+    this.scanTaskId = options.get(SparkWriteOptions.REWRITTEN_FILE_SCAN_TASK_SET_ID);
   }
 
   @Override
@@ -149,6 +153,12 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
   }
 
   private List<CombinedScanTask> tasks() {
+    if (scanTaskId != null) {
+      LOG.info("get task from cache start");
+      this.tasks = ScanTaskSetManager.get().fetchTasks(table, scanTaskId);
+      LOG.info("get {} task from cache end", tasks.size());
+    }
+
     if (tasks == null) {
       KeyedTableScan scan = table.newScan();
 

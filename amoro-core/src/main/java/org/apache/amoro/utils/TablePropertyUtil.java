@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.amoro.table.TableProperties;
@@ -234,5 +235,48 @@ public class TablePropertyUtil {
     properties.put(
         TableProperties.MIXED_FORMAT_TABLE_STORE, TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE);
     return properties;
+  }
+
+  public static StructLikeMap<Long> getPartitionOptimizedSequence(KeyedTable keyedTable) {
+    StructLikeMap<Long> partitionOptimizedSequence =
+        StructLikeMap.create(keyedTable.spec().partitionType());
+
+    StructLikeMap<Map<String, String>> partitionProperty =
+        keyedTable.asKeyedTable().baseTable().partitionProperty();
+    partitionProperty.forEach(
+        (partitionKey, propertyValue) -> {
+          Long maxTxId =
+              (propertyValue == null
+                      || propertyValue.get(TableProperties.PARTITION_OPTIMIZED_SEQUENCE) == null)
+                  ? null
+                  : Long.parseLong(propertyValue.get(TableProperties.PARTITION_OPTIMIZED_SEQUENCE));
+          if (maxTxId != null) {
+            partitionOptimizedSequence.put(partitionKey, maxTxId);
+          }
+        });
+
+    return partitionOptimizedSequence;
+  }
+
+  public static StructLikeMap<Long> getLegacyPartitionMaxTransactionId(KeyedTable keyedTable) {
+    StructLikeMap<Long> baseTableMaxTransactionId =
+        StructLikeMap.create(keyedTable.spec().partitionType());
+
+    StructLikeMap<Map<String, String>> partitionProperty =
+        keyedTable.asKeyedTable().baseTable().partitionProperty();
+    partitionProperty.forEach(
+        (partitionKey, propertyValue) -> {
+          Long maxTxId =
+              (propertyValue == null
+                      || propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID) == null)
+                  ? null
+                  : Long.parseLong(
+                      propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID));
+          if (maxTxId != null) {
+            baseTableMaxTransactionId.put(partitionKey, maxTxId);
+          }
+        });
+
+    return baseTableMaxTransactionId;
   }
 }

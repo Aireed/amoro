@@ -16,29 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spark.writer;
+package org.apache.amoro.optimizing;
 
-public enum WriteMode {
-  OVERWRITE_BY_FILTER("overwrite-by-filter"),
-  OVERWRITE_DYNAMIC("overwrite-dynamic"),
-  APPEND("append"),
-  UPSERT("upsert"),
-  REWRITE_FILES("rewrite-files");
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.StructLike;
 
-  public static final String WRITE_MODE_KEY = "write-mode";
+import java.util.Set;
+import java.util.function.Predicate;
 
-  public final String mode;
-
-  WriteMode(String mode) {
-    this.mode = mode;
-  }
-
-  public static WriteMode getWriteMode(String mode) {
-    for (WriteMode m : values()) {
-      if (m.mode.equalsIgnoreCase(mode)) {
-        return m;
-      }
-    }
-    throw new IllegalArgumentException("Invalid write mode: " + mode);
-  }
+public interface RewriteFilter extends Predicate<DataFile> {
+  Set<StructLike> needRewritePartition();
 }

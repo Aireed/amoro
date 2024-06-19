@@ -16,29 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spark.writer;
+package org.apache.amoro.spark.actions;
 
-public enum WriteMode {
-  OVERWRITE_BY_FILTER("overwrite-by-filter"),
-  OVERWRITE_DYNAMIC("overwrite-dynamic"),
-  APPEND("append"),
-  UPSERT("upsert"),
-  REWRITE_FILES("rewrite-files");
+import org.apache.amoro.hive.optimizing.SupportHiveRewriteAction;
+import org.apache.amoro.table.MixedTable;
+import org.apache.spark.sql.SparkSession;
 
-  public static final String WRITE_MODE_KEY = "write-mode";
+public class SparkRewriteAction extends SupportHiveRewriteAction {
 
-  public final String mode;
+  private final SparkSession spark;
 
-  WriteMode(String mode) {
-    this.mode = mode;
+  public SparkRewriteAction(SparkSession spark, MixedTable table) {
+    super(table);
+    this.spark = spark;
   }
 
-  public static WriteMode getWriteMode(String mode) {
-    for (WriteMode m : values()) {
-      if (m.mode.equalsIgnoreCase(mode)) {
-        return m;
-      }
-    }
-    throw new IllegalArgumentException("Invalid write mode: " + mode);
+  @Override
+  public void doRewrite(String groupId) {
+    new MixFormatDataRewriter(spark, table).doRewrite(groupId);
   }
 }

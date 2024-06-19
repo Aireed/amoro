@@ -110,7 +110,8 @@ struct Blocker {
 
 enum BlockableOperation {
    OPTIMIZE,
-   BATCH_WRITE
+   BATCH_WRITE,
+   ONLINE_OPTIMIZE
 }
 
 

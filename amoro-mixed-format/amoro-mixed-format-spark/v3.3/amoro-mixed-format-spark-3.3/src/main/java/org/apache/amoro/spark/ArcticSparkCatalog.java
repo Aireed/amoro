@@ -25,6 +25,7 @@ import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHO
 import org.apache.amoro.hive.utils.CatalogUtil;
 import org.apache.amoro.spark.mixed.MixedSparkCatalogBase;
 import org.apache.amoro.spark.mixed.MixedTableStoreType;
+import org.apache.amoro.spark.procedures.SupportProcedures;
 import org.apache.amoro.spark.table.ArcticSparkChangeTable;
 import org.apache.amoro.spark.table.ArcticSparkTable;
 import org.apache.amoro.table.BasicUnkeyedTable;
@@ -45,6 +46,7 @@ import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
+import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.catalyst.analysis.NonEmptyNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
@@ -56,6 +58,8 @@ import org.apache.spark.sql.connector.catalog.TableChange.ColumnChange;
 import org.apache.spark.sql.connector.catalog.TableChange.RemoveProperty;
 import org.apache.spark.sql.connector.catalog.TableChange.SetProperty;
 import org.apache.spark.sql.connector.expressions.Transform;
+import org.apache.spark.sql.connector.iceberg.catalog.Procedure;
+import org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog;
 import org.apache.spark.sql.types.StructType;
 import scala.Option;
 
@@ -65,7 +69,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ArcticSparkCatalog extends MixedSparkCatalogBase {
+public class ArcticSparkCatalog extends MixedSparkCatalogBase implements ProcedureCatalog {
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
@@ -312,5 +316,26 @@ public class ArcticSparkCatalog extends MixedSparkCatalogBase {
     String database = namespace[0];
     catalog.dropDatabase(database);
     return true;
+  }
+
+  @Override
+  public Procedure loadProcedure(Identifier ident) throws NoSuchProcedureException {
+    String[] namespace = ident.namespace();
+    String name = ident.name();
+
+    // namespace resolution is case insensitive until we have a way to configure case sensitivity in
+    // catalogs
+    if (isActionNamespace(namespace)) {
+      SupportProcedures.ProcedureBuilder<?> builder = SupportProcedures.newBuilder(name);
+      if (builder != null) {
+        return builder.withTableCatalog(this).build();
+      }
+    }
+
+    throw new NoSuchProcedureException(ident);
+  }
+
+  private static boolean isActionNamespace(String[] namespace) {
+    return namespace.length == 1 && namespace[0].equalsIgnoreCase("action");
   }
 }

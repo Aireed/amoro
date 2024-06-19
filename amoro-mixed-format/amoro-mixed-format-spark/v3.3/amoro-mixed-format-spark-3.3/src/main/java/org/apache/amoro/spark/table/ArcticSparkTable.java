@@ -237,4 +237,8 @@ public class ArcticSparkTable
   public InternalRow[] listPartitionIdentifiers(String[] names, InternalRow ident) {
     return new InternalRow[0];
   }
+
+  public MixedFormatCatalog catalog() {
+    return this.catalog;
+  }
 }

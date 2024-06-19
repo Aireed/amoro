@@ -24,6 +24,7 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.spark.SparkFilters;
+import org.apache.iceberg.spark.SparkWriteOptions;
 import org.apache.spark.sql.connector.write.BatchWrite;
 import org.apache.spark.sql.connector.write.LogicalWriteInfo;
 import org.apache.spark.sql.connector.write.SupportsDynamicOverwrite;
@@ -45,6 +46,8 @@ public class ArcticSparkWriteBuilder
     BatchWrite asOverwriteByFilter(Expression overwriteExpr);
 
     BatchWrite asUpsertWrite();
+
+    BatchWrite asRewriteFiles(String rewrittenFileSetId);
   }
 
   protected final CaseInsensitiveStringMap options;
@@ -56,6 +59,7 @@ public class ArcticSparkWriteBuilder
   private final MixedTable table;
   private final LogicalWriteInfo info;
   private final MixedFormatCatalog catalog;
+  private String rewrittenFileSetId;
 
   public ArcticSparkWriteBuilder(
       MixedTable table, LogicalWriteInfo info, MixedFormatCatalog catalog) {
@@ -84,6 +88,10 @@ public class ArcticSparkWriteBuilder
       writeMode = WriteMode.OVERWRITE_DYNAMIC;
     } else {
       writeMode = WriteMode.OVERWRITE_BY_FILTER;
+    }
+    if (options.containsKey(SparkWriteOptions.REWRITTEN_FILE_SCAN_TASK_SET_ID)) {
+      this.writeMode = WriteMode.REWRITE_FILES;
+      this.rewrittenFileSetId = options.get(SparkWriteOptions.REWRITTEN_FILE_SCAN_TASK_SET_ID);
     }
     return this;
   }

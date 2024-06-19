@@ -16,29 +16,35 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spark.writer;
+package org.apache.amoro.optimizing;
 
-public enum WriteMode {
-  OVERWRITE_BY_FILTER("overwrite-by-filter"),
-  OVERWRITE_DYNAMIC("overwrite-dynamic"),
-  APPEND("append"),
-  UPSERT("upsert"),
-  REWRITE_FILES("rewrite-files");
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.io.CloseableIterable;
 
-  public static final String WRITE_MODE_KEY = "write-mode";
+import java.util.List;
 
-  public final String mode;
+public interface TableFileScanHelper {
+  class FileScanResult {
+    private final DataFile file;
+    private final List<ContentFile<?>> deleteFiles;
 
-  WriteMode(String mode) {
-    this.mode = mode;
-  }
-
-  public static WriteMode getWriteMode(String mode) {
-    for (WriteMode m : values()) {
-      if (m.mode.equalsIgnoreCase(mode)) {
-        return m;
-      }
+    public FileScanResult(DataFile file, List<ContentFile<?>> deleteFiles) {
+      this.file = file;
+      this.deleteFiles = deleteFiles;
     }
-    throw new IllegalArgumentException("Invalid write mode: " + mode);
+
+    public DataFile file() {
+      return file;
+    }
+
+    public List<ContentFile<?>> deleteFiles() {
+      return deleteFiles;
+    }
   }
+
+  CloseableIterable<FileScanResult> scan();
+
+  TableFileScanHelper withPartitionFilter(Expression partitionFilter);
 }

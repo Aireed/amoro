@@ -41,6 +41,7 @@ public class TableFileUtil {
    * @return file name parsed from file path
    */
   public static String getFileName(String filePath) {
+    filePath = filePath.replaceAll("\\\\", "/");
     int lastSlash = filePath.lastIndexOf('/');
     return filePath.substring(lastSlash + 1);
   }
@@ -52,6 +53,7 @@ public class TableFileUtil {
    * @return file directory path parsed from file path
    */
   public static String getFileDir(String filePath) {
+    filePath = filePath.replaceAll("\\\\", "/");
     int lastSlash = filePath.lastIndexOf('/');
     return filePath.substring(0, lastSlash);
   }

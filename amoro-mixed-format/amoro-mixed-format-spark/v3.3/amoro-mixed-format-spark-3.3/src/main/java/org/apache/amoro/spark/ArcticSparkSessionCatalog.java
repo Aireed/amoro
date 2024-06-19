@@ -22,12 +22,15 @@ import org.apache.amoro.spark.mixed.MixedSessionCatalogBase;
 import org.apache.amoro.spark.mixed.MixedSparkCatalogBase;
 import org.apache.spark.sql.catalyst.analysis.NoSuchFunctionException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
+import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
 import org.apache.spark.sql.catalyst.analysis.NonEmptyNamespaceException;
 import org.apache.spark.sql.connector.catalog.FunctionCatalog;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.catalog.functions.UnboundFunction;
+import org.apache.spark.sql.connector.iceberg.catalog.Procedure;
+import org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 /**
@@ -37,7 +40,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
  */
 public class ArcticSparkSessionCatalog<
         T extends TableCatalog & SupportsNamespaces & FunctionCatalog>
-    extends MixedSessionCatalogBase<T> {
+    extends MixedSessionCatalogBase<T> implements ProcedureCatalog {
 
   @Override
   protected MixedSparkCatalogBase buildTargetCatalog(
@@ -61,5 +64,10 @@ public class ArcticSparkSessionCatalog<
   public boolean dropNamespace(String[] namespace, boolean cascade)
       throws NoSuchNamespaceException, NonEmptyNamespaceException {
     return getSessionCatalog().dropNamespace(namespace, cascade);
+  }
+
+  @Override
+  public Procedure loadProcedure(Identifier ident) throws NoSuchProcedureException {
+    return ((ArcticSparkCatalog) getTargetCatalog()).loadProcedure(ident);
   }
 }
