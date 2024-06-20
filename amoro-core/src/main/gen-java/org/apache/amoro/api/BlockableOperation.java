@@ -38,7 +38,7 @@ public enum BlockableOperation implements org.apache.thrift.TEnum {
       case 1:
         return BATCH_WRITE;
       case 2:
-        return BATCH_WRITE;
+        return ONLINE_OPTIMIZE;
       default:
         return null;
     }
