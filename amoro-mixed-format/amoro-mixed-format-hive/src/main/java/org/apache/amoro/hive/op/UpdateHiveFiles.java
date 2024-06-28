@@ -316,21 +316,21 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
 
   private void checkPartitionDelete(Set<String> deleteFiles, Partition partition) {
     // 为华泰场景定制，hive 目录下会有spark 产生的一些临时文件，导致目录抛出异常，无法commit. 丹峰与陈老师对过
-//    String partitionLocation = partition.getSd().getLocation();
-//
-//    try (AuthenticatedHadoopFileIO io = table.io()) {
-//      io.listDirectory(partitionLocation)
-//          .forEach(
-//              f -> {
-//                if (!deleteFiles.contains(f.location())) {
-//                  throw new CannotAlterHiveLocationException(
-//                      "can't delete hive partition: "
-//                          + partitionToString(partition)
-//                          + ", file under partition is not deleted: "
-//                          + f.location());
-//                }
-//              });
-//    }
+    //    String partitionLocation = partition.getSd().getLocation();
+    //
+    //    try (AuthenticatedHadoopFileIO io = table.io()) {
+    //      io.listDirectory(partitionLocation)
+    //          .forEach(
+    //              f -> {
+    //                if (!deleteFiles.contains(f.location())) {
+    //                  throw new CannotAlterHiveLocationException(
+    //                      "can't delete hive partition: "
+    //                          + partitionToString(partition)
+    //                          + ", file under partition is not deleted: "
+    //                          + f.location());
+    //                }
+    //              });
+    //    }
   }
 
   /** check all file with same partition key under same path */

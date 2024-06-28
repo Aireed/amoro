@@ -200,4 +200,22 @@ public class HiveTableUtil {
       throw new IOException(e);
     }
   }
+
+  public static void setTableOwner(
+      HMSClientPool hiveClient, TableIdentifier tableIdentifier, String owner) throws IOException {
+    try {
+      hiveClient.run(
+          client -> {
+            LOG.info("Start to load hive table {}", tableIdentifier);
+            Table newTable = loadHmsTable(hiveClient, tableIdentifier);
+            newTable.setOwner(owner);
+            client.alterTable(
+                tableIdentifier.getDatabase(), tableIdentifier.getTableName(), newTable);
+            LOG.info("Load hive table and alter hive owner success {}", tableIdentifier);
+            return null;
+          });
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
+  }
 }

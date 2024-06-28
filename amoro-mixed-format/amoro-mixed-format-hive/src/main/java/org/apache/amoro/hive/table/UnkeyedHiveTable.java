@@ -27,6 +27,7 @@ import org.apache.amoro.hive.op.HiveSchemaUpdate;
 import org.apache.amoro.hive.op.OverwriteHiveFiles;
 import org.apache.amoro.hive.op.ReplaceHivePartitions;
 import org.apache.amoro.hive.op.RewriteHiveFiles;
+import org.apache.amoro.hive.op.UpdateHiveProperties;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
 import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.io.AuthenticatedHadoopFileIO;
@@ -39,6 +40,7 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
+import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
 
@@ -186,5 +188,10 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
   @Override
   public void syncHiveDataToArctic(boolean force) {
     HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient, force);
+  }
+
+  @Override
+  public UpdateProperties updateProperties() {
+    return new UpdateHiveProperties(this);
   }
 }
