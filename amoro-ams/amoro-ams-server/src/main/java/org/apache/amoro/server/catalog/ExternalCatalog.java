@@ -25,6 +25,7 @@ import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.ServerTableIdentifier;
+import org.apache.amoro.mixed.SupportLoadHiveTablesWithFormat;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.table.TableMetaStore;
@@ -37,7 +38,7 @@ import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class ExternalCatalog extends ServerCatalog {
+public class ExternalCatalog extends ServerCatalog implements SupportLoadHiveTablesWithFormat {
 
   UnifiedCatalog unifiedCatalog;
   TableMetaStore tableMetaStore;
@@ -130,6 +131,15 @@ public class ExternalCatalog extends ServerCatalog {
                                             + tableIDWithFormat.getIdentifier().getTableName()))
                                     .matches())
                     .collect(Collectors.toList())));
+  }
+
+  @Override
+  public List<TableIDWithFormat> listAllTables(String database, List<String> skipTables)
+      throws UnsupportedOperationException {
+    if (unifiedCatalog instanceof SupportLoadHiveTablesWithFormat) {
+      return ((SupportLoadHiveTablesWithFormat) unifiedCatalog).listAllTables(database, skipTables);
+    }
+    throw new UnsupportedOperationException();
   }
 
   @Override

@@ -83,7 +83,6 @@ public interface MixedFormatCatalog {
    * @return Table list of database in catalog
    */
   List<TableIdentifier> listTables(String database);
-
   /**
    * Get an mixed-format table by table identifier.
    *

@@ -24,11 +24,13 @@ import static org.apache.amoro.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELI
 import static org.apache.amoro.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
 import static org.apache.amoro.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
 import static org.apache.amoro.table.TableProperties.LOG_STORE_TYPE;
+import static org.apache.amoro.table.TableProperties.TABLE_FORMAT;
 
 import org.apache.amoro.AmsClient;
 import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.PooledAmsClient;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClient;
@@ -39,6 +41,7 @@ import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.AuthenticatedFileIOs;
 import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.mixed.SupportLoadHiveTablesWithFormat;
 import org.apache.amoro.op.CreateTableTransaction;
 import org.apache.amoro.op.MixedHadoopTableOperations;
 import org.apache.amoro.properties.CatalogMetaProperties;
@@ -60,6 +63,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
+import org.apache.iceberg.BaseMetastoreTableOperations;
 import org.apache.iceberg.IcebergSchemaUtil;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
@@ -87,7 +91,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /** Implementation of {@link MixedFormatCatalog} to support Hive table as base store. */
-public class ArcticHiveCatalog implements MixedFormatCatalog {
+public class ArcticHiveCatalog implements MixedFormatCatalog, SupportLoadHiveTablesWithFormat {
 
   private static final Logger LOG = LoggerFactory.getLogger(ArcticHiveCatalog.class);
 
@@ -275,6 +279,88 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
   }
 
   /**
+   * for mixed_hive， we should get all Tables from hms once.
+   *
+   * @param database
+   * @return
+   * @throws UnsupportedOperationException
+   */
+  @Override
+  public List<TableIDWithFormat> listAllTables(String database, List<String> skipTables)
+      throws UnsupportedOperationException {
+    final List<TableIDWithFormat> result = new ArrayList<>();
+    try {
+      hiveClientPool.run(
+          client -> {
+            List<String> tableNames = client.getAllTables(database);
+            // in case of access repeatly
+            tableNames.removeAll(skipTables);
+            long start = System.currentTimeMillis();
+            List<org.apache.hadoop.hive.metastore.api.Table> hiveTables =
+                client.getTableObjectsByName(database, tableNames);
+            LOG.info(
+                "listAllTables call getTableObjectsByName cost {} ms",
+                System.currentTimeMillis() - start);
+            // filter hive tables whose properties don't have arctic table flag
+            if (hiveTables != null && !hiveTables.isEmpty()) {
+              List<TableIDWithFormat> loadResult =
+                  hiveTables.stream()
+                      .map(
+                          table -> {
+                            TableFormat format = TableFormat.HIVE;
+                            if (table.getParameters() != null) {
+                              if (CompatibleHivePropertyUtil.propertyAsBoolean(
+                                  table.getParameters(),
+                                  HiveTableProperties.MIXED_TABLE_FLAG,
+                                  false)) {
+                                format = TableFormat.MIXED_HIVE;
+                              } else if (TableFormat.MIXED_ICEBERG
+                                  .name()
+                                  .equals(table.getParameters().get(TABLE_FORMAT))) {
+                                format = TableFormat.MIXED_ICEBERG;
+                              } else if (BaseMetastoreTableOperations.ICEBERG_TABLE_TYPE_VALUE
+                                  .equalsIgnoreCase(
+                                      table
+                                          .getParameters()
+                                          .get(BaseMetastoreTableOperations.TABLE_TYPE_PROP))) {
+                                format = TableFormat.ICEBERG;
+                              } else if (("org.apache.flink.table.store.mapred.TableStoreInputFormat"
+                                          .equals(table.getSd().getInputFormat())
+                                      && "org.apache.flink.table.store.mapred.TableStoreOutputFormat"
+                                          .equals(table.getSd().getOutputFormat()))
+                                  || ("org.apache.paimon.hive.mapred.PaimonInputFormat"
+                                          .equals(table.getSd().getInputFormat())
+                                      && "org.apache.paimon.hive.mapred.PaimonOutputFormat"
+                                          .equals(table.getSd().getOutputFormat()))) {
+                                format = TableFormat.PAIMON;
+                              }
+                            }
+                            return TableIDWithFormat.of(
+                                TableIdentifier.of(name(), database, table.getTableName()), format);
+                          })
+                      .collect(Collectors.toList());
+              if (loadResult != null && !loadResult.isEmpty()) {
+                result.addAll(loadResult);
+              }
+              LOG.info(
+                  "load {} tables from database {} of catalog {}",
+                  loadResult == null ? 0 : loadResult.size(),
+                  database,
+                  name());
+            } else {
+              LOG.debug("load no tables from database {} of catalog {}", database, name());
+            }
+            return result;
+          });
+    } catch (NoSuchObjectException e) {
+      // pass
+    } catch (TException | InterruptedException e) {
+      throw new RuntimeException("Failed to listTables of database :" + database, e);
+    }
+    return result;
+  }
+
+  /**
    *
    *
    * <ul>
@@ -298,7 +384,9 @@ public class ArcticHiveCatalog implements MixedFormatCatalog {
             long start = System.currentTimeMillis();
             List<org.apache.hadoop.hive.metastore.api.Table> hiveTables =
                 client.getTableObjectsByName(database, tableNames);
-            LOG.info("call getTableObjectsByName cost {} ms", System.currentTimeMillis() - start);
+            LOG.info(
+                "[listTables] call getTableObjectsByName cost {} ms",
+                System.currentTimeMillis() - start);
             // filter hive tables whose properties don't have arctic table flag
             if (hiveTables != null && !hiveTables.isEmpty()) {
               List<TableIdentifier> loadResult =

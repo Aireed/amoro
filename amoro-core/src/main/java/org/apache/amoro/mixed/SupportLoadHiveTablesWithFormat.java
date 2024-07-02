@@ -16,26 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.amoro;
+package org.apache.amoro.mixed;
 
-/**
- * Table formats Amoro supported
- *
- * @since 0.4.0
- */
-public enum TableFormat {
-  ICEBERG,
-  MIXED_ICEBERG,
-  MIXED_HIVE,
-  PAIMON,
-  HIVE;
+import org.apache.amoro.TableIDWithFormat;
 
-  public boolean in(TableFormat... tableFormats) {
-    for (TableFormat tableFormat : tableFormats) {
-      if (this == tableFormat) {
-        return true;
-      }
-    }
-    return false;
+import java.util.List;
+
+/** @Auth: hzwangtao6 @Time: 2024/6/28 10:39 @Description: */
+public interface SupportLoadHiveTablesWithFormat {
+  default List<TableIDWithFormat> listAllTables(String database, List<String> skipTables)
+      throws UnsupportedOperationException {
+    throw new UnsupportedOperationException();
   }
 }

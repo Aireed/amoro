@@ -29,6 +29,7 @@ import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.api.config.Configurations;
 import org.apache.amoro.api.config.TableConfiguration;
+import org.apache.amoro.mixed.SupportLoadHiveTablesWithFormat;
 import org.apache.amoro.server.ArcticManagementConf;
 import org.apache.amoro.server.catalog.CatalogBuilder;
 import org.apache.amoro.server.catalog.ExternalCatalog;
@@ -55,6 +56,7 @@ import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFact
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -449,6 +451,9 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   void exploreExternalCatalog() {
     long start = System.currentTimeMillis();
     LOG.info("Syncing external catalogs: {}", String.join(",", externalCatalogMap.keySet()));
+
+    // we should skip some tables which is updated by last time to reduce the load of hms.
+
     for (ExternalCatalog externalCatalog : externalCatalogMap.values()) {
       try {
         final List<CompletableFuture<Set<TableIdentity>>> tableIdentifiersFutures =
@@ -462,9 +467,16 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                         CompletableFuture.supplyAsync(
                             () -> {
                               try {
-                                return externalCatalog.listTables(database).stream()
-                                    .map(TableIdentity::new)
-                                    .collect(Collectors.toSet());
+                                if (externalCatalog instanceof SupportLoadHiveTablesWithFormat) {
+                                  return externalCatalog.listAllTables(database, new ArrayList<>())
+                                      .stream()
+                                      .map(TableIdentity::new)
+                                      .collect(Collectors.toSet());
+                                } else {
+                                  return externalCatalog.listTables(database).stream()
+                                      .map(TableIdentity::new)
+                                      .collect(Collectors.toSet());
+                                }
                               } catch (Exception e) {
                                 LOG.error(
                                     "TableExplorer list tables in database {} error", database, e);

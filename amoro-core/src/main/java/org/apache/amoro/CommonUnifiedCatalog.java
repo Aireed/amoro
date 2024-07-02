@@ -18,12 +18,16 @@
 
 package org.apache.amoro;
 
+import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+
 import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.mixed.SupportLoadHiveTablesWithFormat;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedCatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,7 +37,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class CommonUnifiedCatalog implements UnifiedCatalog {
+public class CommonUnifiedCatalog implements UnifiedCatalog, SupportLoadHiveTablesWithFormat {
 
   private final Supplier<CatalogMeta> metaSupplier;
   private CatalogMeta meta;
@@ -128,17 +132,37 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     return this.meta.getCatalogName();
   }
 
-  @Override
   public List<TableIDWithFormat> listTables(String database) {
+    return listAllTables(database, new ArrayList<>());
+  }
+
+  @Override
+  public List<TableIDWithFormat> listAllTables(String database, List<String> skipTables) {
     if (!exist(database)) {
       throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
     }
+
+    skipTables = skipTables == null ? new ArrayList<>() : skipTables;
+
     TableFormat[] formats =
         new TableFormat[] {
           TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG, TableFormat.PAIMON
         };
 
     Map<String, TableFormat> tableNameToFormat = Maps.newHashMap();
+
+    // if the metastore of catalog is hms and support mixed_hive， we optimize listTables.
+    if (meta.getCatalogType().equalsIgnoreCase(CATALOG_TYPE_HIVE)) {
+      for (TableFormat format : formats) {
+        if (formatCatalogs.containsKey(format)) {
+          FormatCatalog formatCatalog = formatCatalogs.get(format);
+          if (formatCatalog instanceof SupportLoadHiveTablesWithFormat)
+            return ((SupportLoadHiveTablesWithFormat) formatCatalog)
+                .listAllTables(database, skipTables);
+        }
+      }
+    }
+
     for (TableFormat format : formats) {
       if (formatCatalogs.containsKey(format)) {
         formatCatalogs

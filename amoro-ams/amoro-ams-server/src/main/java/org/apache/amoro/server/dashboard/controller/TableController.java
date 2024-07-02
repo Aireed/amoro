@@ -32,6 +32,7 @@ import org.apache.amoro.hive.catalog.ArcticHiveCatalog;
 import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.hive.utils.UpgradeHiveTableUtil;
 import org.apache.amoro.mixed.CatalogLoader;
+import org.apache.amoro.mixed.SupportLoadHiveTablesWithFormat;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.catalog.ServerCatalog;
@@ -487,6 +488,8 @@ public class TableController {
               return TableMeta.TableType.PAIMON.toString();
             case ICEBERG:
               return TableMeta.TableType.ICEBERG.toString();
+            case HIVE:
+              return TableMeta.TableType.HIVE.toString();
             default:
               throw new IllegalStateException("Unknown format");
           }
@@ -510,7 +513,8 @@ public class TableController {
                 })
             .collect(Collectors.toList());
     String catalogType = serverCatalog.getMetadata().getCatalogType();
-    if (catalogType.equals(CATALOG_TYPE_HIVE)) {
+    if (catalogType.equals(CATALOG_TYPE_HIVE)
+        && !(serverCatalog instanceof SupportLoadHiveTablesWithFormat)) {
       CatalogMeta catalogMeta = serverCatalog.getMetadata();
       TableMetaStore tableMetaStore = MixedCatalogUtil.buildMetaStore(catalogMeta);
       HMSClientPool hmsClientPool =

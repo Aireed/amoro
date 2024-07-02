@@ -21,7 +21,9 @@ package org.apache.amoro.formats.mixed;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.mixed.SupportLoadHiveTablesWithFormat;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.exceptions.NoSuchTableException;
@@ -29,7 +31,7 @@ import org.apache.iceberg.exceptions.NoSuchTableException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class MixedCatalog implements FormatCatalog {
+public class MixedCatalog implements FormatCatalog, SupportLoadHiveTablesWithFormat {
   final MixedFormatCatalog catalog;
   final TableFormat format;
 
@@ -84,5 +86,14 @@ public class MixedCatalog implements FormatCatalog {
   @Override
   public boolean dropTable(String database, String table, boolean purge) {
     return catalog.dropTable(TableIdentifier.of(catalog.name(), database, table), purge);
+  }
+
+  @Override
+  public List<TableIDWithFormat> listAllTables(String database, List<String> skipTables)
+      throws UnsupportedOperationException {
+    if (catalog instanceof SupportLoadHiveTablesWithFormat) {
+      return ((SupportLoadHiveTablesWithFormat) catalog).listAllTables(database, skipTables);
+    }
+    throw new UnsupportedOperationException("Unsupported method listAllTables!");
   }
 }
