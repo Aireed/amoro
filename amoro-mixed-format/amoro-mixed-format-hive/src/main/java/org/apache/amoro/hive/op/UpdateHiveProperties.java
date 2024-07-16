@@ -35,19 +35,19 @@ import java.util.Set;
 public class UpdateHiveProperties implements UpdateProperties {
   protected final Map<String, String> propsSet = Maps.newHashMap();
   protected final Set<String> propsDel = Sets.newHashSet();
-  protected final UnkeyedHiveTable unkeyedTable;
+  protected final UnkeyedHiveTable unKeyedTable;
 
-  public UpdateHiveProperties(UnkeyedHiveTable unkeyedTable) {
-    this.unkeyedTable = unkeyedTable;
+  public UpdateHiveProperties(UnkeyedHiveTable unKeyedTable) {
+    this.unKeyedTable = unKeyedTable;
   }
 
   @Override
   public UpdateProperties set(String key, String value) {
     if (key.equals(org.apache.amoro.table.TableProperties.OWNER) && StringUtils.isNotBlank(value)) {
       try {
-        HiveTableUtil.setTableOwner(unkeyedTable.getHMSClient(), unkeyedTable.id(), value);
+        HiveTableUtil.setTableOwner(unKeyedTable.getHMSClient(), unKeyedTable.id(), value);
       } catch (IOException e) {
-        throw new RuntimeException("Set table owner failed " + unkeyedTable.id(), e);
+        throw new RuntimeException("Set table owner failed " + unKeyedTable.id(), e);
       }
     }
     propsSet.put(key, value);
@@ -69,7 +69,7 @@ public class UpdateHiveProperties implements UpdateProperties {
   @Override
   public Map<String, String> apply() {
     Map<String, String> newProperties = Maps.newHashMap();
-    for (Map.Entry<String, String> entry : unkeyedTable.properties().entrySet()) {
+    for (Map.Entry<String, String> entry : unKeyedTable.properties().entrySet()) {
       if (!propsDel.contains(entry.getKey())) {
         newProperties.put(entry.getKey(), entry.getValue());
       }
@@ -81,11 +81,11 @@ public class UpdateHiveProperties implements UpdateProperties {
   @Override
   public void commit() {
     Map<String, String> props = apply();
-    commitIcebergTableProperties(unkeyedTable);
+    commitIcebergTableProperties(unKeyedTable);
   }
 
   protected void commitIcebergTableProperties(UnkeyedHiveTable unkeyedTable) {
-    UpdateProperties updateProperties = unkeyedTable.updateProperties();
+    UpdateProperties updateProperties = unkeyedTable.getIcebergTable().updateProperties();
     propsSet.forEach(updateProperties::set);
     propsDel.forEach(updateProperties::remove);
     updateProperties.commit();

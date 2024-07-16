@@ -194,4 +194,8 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
   public UpdateProperties updateProperties() {
     return new UpdateHiveProperties(this);
   }
+
+  public Table getIcebergTable() {
+    return icebergTable;
+  }
 }
