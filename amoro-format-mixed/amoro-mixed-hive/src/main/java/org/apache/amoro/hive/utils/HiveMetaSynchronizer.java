@@ -36,18 +36,11 @@ import org.apache.hadoop.hive.metastore.Warehouse;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.MetricsConfig;
-import org.apache.iceberg.OverwriteFiles;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.StructLike;
-import org.apache.iceberg.TableScan;
-import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.*;
 import org.apache.iceberg.data.TableMigrationUtil;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.mapping.NameMappingParser;
+import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
@@ -57,6 +50,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -345,11 +340,43 @@ public class HiveMetaSynchronizer {
     }
   }
 
+  private static <T> T get(StructLike data, int pos, Class<?> javaClass) {
+    return data.get(pos, (Class<T>) javaClass);
+  }
+
+  private static String escape(String string) {
+    try {
+      return URLEncoder.encode(string, "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static String partitionToPath(SupportHive table, StructLike data) {
+    StringBuilder sb = new StringBuilder();
+    Class<?>[] javaClasses = table.spec().javaClasses();
+    List<Types.NestedField> outputFields = table.spec().partitionType().fields();
+    List<PartitionField> fields = table.spec().fields();
+    for (int i = 0; i < javaClasses.length; i += 1) {
+      PartitionField field = fields.get(i);
+      Type type = outputFields.get(i).type();
+      String valueString = field.transform().toHumanString(type, get(data, i, javaClasses[i]));
+
+      if (i > 0) {
+        sb.append("/");
+      }
+      //  convert all partition key to lower case
+      sb.append(field.name().toLowerCase()).append("=").append(escape(valueString));
+    }
+    return sb.toString();
+  }
+
   private static void syncPartitionTable(
       SupportHive table, StructLikeMap<Map<String, String>> partitionProperty) throws Exception {
     Map<String, StructLike> icebergPartitionMap = new HashMap<>();
     for (StructLike structLike : partitionProperty.keySet()) {
-      icebergPartitionMap.put(table.spec().partitionToPath(structLike), structLike);
+      // lower case for compatible with hive
+      icebergPartitionMap.put(partitionToPath(table, structLike), structLike);
     }
     List<String> icebergPartitions = new ArrayList<>(icebergPartitionMap.keySet());
     List<Partition> hivePartitions =

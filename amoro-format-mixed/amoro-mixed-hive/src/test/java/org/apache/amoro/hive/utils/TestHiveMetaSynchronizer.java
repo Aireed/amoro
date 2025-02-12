@@ -20,7 +20,9 @@ package org.apache.amoro.hive.utils;
 
 import static org.apache.amoro.utils.TablePropertyUtil.EMPTY_STRUCT;
 
+import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
@@ -63,6 +65,11 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     super(
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
         new HiveTableTestHelper(ifKeyed, ifPartitioned));
+  }
+
+  public TestHiveMetaSynchronizer(
+      CatalogTestHelper catalogHelper, BasicTableTestHelper baseTableTestHelper) {
+    super(catalogHelper, baseTableTestHelper);
   }
 
   @Parameterized.Parameters(name = "ifKeyed = {0}, ifPartitioned = {1}")
