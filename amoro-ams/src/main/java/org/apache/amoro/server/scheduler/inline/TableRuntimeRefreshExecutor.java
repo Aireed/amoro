@@ -24,6 +24,7 @@ import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
+import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
@@ -63,14 +64,10 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
 
   private void tryEvaluatingPendingInput(DefaultTableRuntime tableRuntime, MixedTable table) {
     DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
-    // When planning tasks, tables may be ignored if their plan intervals are too small,
-    // resulting in this optimization being ineffective， so skip evaluator in advance
-    boolean canPlan =
-        tableRuntime.getOptimizingState().getLastPlanTime() - System.currentTimeMillis()
-            > tableRuntime.getTableConfiguration().getOptimizingConfig().getMinPlanInterval();
+
+    // only evaluate pending input when optimizing is enabled and in idle state
     if (optimizingState.isOptimizingEnabled()
-        && !optimizingState.getOptimizingStatus().isProcessing()
-        && canPlan) {
+        && !optimizingState.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
       AbstractOptimizingEvaluator evaluator =
           IcebergTableUtil.createOptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
       if (evaluator.isNecessary()) {
