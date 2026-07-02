@@ -69,7 +69,7 @@
 
 
 <link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
-<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+<link href="../css/lato-font.css" rel="stylesheet" type="text/css">
 
 
 <link href="../css/termynal.css" rel="stylesheet">
@@ -203,7 +203,7 @@
                 
                 
                     <div class="topnav-page-selection">
-                        <a   href="https://amoro.apache.org/docs/latest/../../blogs/">blogs</a>
+                        <a   href="https://amoro.apache.org/docs/latest/../../blogs/">Blogs</a>
                     </div class="topnav-page-selection">
                 
                 
@@ -249,6 +249,10 @@
                             </li class="topnav-page-selection">
                         
                             <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://events.apache.org/">Events</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
                             <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
                             </li class="topnav-page-selection">
                         
@@ -277,6 +281,41 @@
             </div>
             </topsection>
     </nav>
+
+
+
+
+
+    
+
+    
+        
+            
+        
+            
+                
+                
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+    
+
+    
+
+    
+
+    
+
+    
+
+    
 
 <body dir=" ltr">
     <section>
@@ -614,7 +653,16 @@
 
             
             <div id="content" class="markdown-body">
-                <div class="margin-for-toc"><!--
+                <div class="margin-for-toc">
+                    
+                    <div class="latest-docs-note">
+                        <p>This documentation reflects the <code>latest</code> development version and may change before the next official release.</p>
+                        <p>
+                            For the latest stable documentation, see
+                            <a href="https://amoro.apache.org/docs/latest/../../docs/0.8.1/"><strong>0.8.1-incubating</strong></a>.
+                        </p>
+                    </div>
+                    <!--
  - Licensed to the Apache Software Foundation (ASF) under one or more
  - contributor license agreements.  See the NOTICE file distributed with
  - this work for additional information regarding copyright ownership.
@@ -640,56 +688,48 @@
 <p>Users can enable LogStore by configuring the following parameters when creating an Amoro table. For specific configurations, please refer to <a href="../configurations/#logstore-configurations">LogStore related configurations</a>.</p>
 <h2 id="overview">Overview</h2>
 <table>
-  <thead>
-      <tr>
-          <th>Flink</th>
-          <th>Kafka</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>Flink 1.15</td>
-          <td>✔</td>
-      </tr>
-      <tr>
-          <td>Flink 1.16</td>
-          <td>✔</td>
-      </tr>
-      <tr>
-          <td>Flink 1.17</td>
-          <td>✔</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Flink</th>
+					<th>Kafka</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Flink 1.18</td>
+					<td>✔</td>
+			</tr>
+			<tr>
+					<td>Flink 1.19</td>
+					<td>✔</td>
+			</tr>
+	</tbody>
 </table>
 <p>Kafka as LogStore Version Description:</p>
 <table>
-  <thead>
-      <tr>
-          <th>Flink Version</th>
-          <th>Kafka Versions</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>1.15.x</td>
-          <td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
-      </tr>
-      <tr>
-          <td>1.16.x</td>
-          <td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
-      </tr>
-      <tr>
-          <td>1.17.x</td>
-          <td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Flink Version</th>
+					<th>Kafka Versions</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>1.18.x</td>
+					<td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
+			</tr>
+			<tr>
+					<td>1.19.x</td>
+					<td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
+			</tr>
+	</tbody>
 </table>
 <h3 id="prerequisites-for-using-logstore">Prerequisites for using LogStore</h3>
 <p>When creating an Amoro table, LogStore needs to be enabled.</p>
 <ul>
 <li>You can create a table after selecting a specific Catalog on the Amoro <a href="http://localhost:1630">Dashboard</a> - Terminal page</li>
 </ul>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> db.log_table (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> db.log_table (
 </span></span><span style="display:flex;"><span>    id int,
 </span></span><span style="display:flex;"><span>    name string,
 </span></span><span style="display:flex;"><span>    ts <span style="color:#66d9ef">timestamp</span>,
@@ -703,7 +743,7 @@
 </span></span></code></pre></div><ul>
 <li>You can also use Flink SQL to create tables in Flink-SQL-Client</li>
 </ul>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- First use the use catalog command to switch to the mixed-format catalog.
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- First use the use catalog command to switch to the mixed-format catalog.
 </span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> db.log_table (
 </span></span><span style="display:flex;"><span>    id int,
 </span></span><span style="display:flex;"><span>    name string,
@@ -716,7 +756,7 @@
 </span></span></code></pre></div><h3 id="double-write-logstore-and-filestore">Double write LogStore and FileStore</h3>
 <p><img src="../../images/flink/double-write.png" alt="Introduce"></p>
 <p>Amoro Connector writes data to LogStore and ChangeStore at the same time through double-write operations, without opening Kafka transactions to ensure data consistency between the two, because opening transactions will bring a few minutes of delay to downstream tasks (the specific delay time depends on upstream tasks checkpoint interval).</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.log_table <span style="color:#75715e">/*+ OPTIONS(&#39;mixed-format.emit.mode&#39;=&#39;log&#39;) */</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.log_table <span style="color:#75715e">/*+ OPTIONS(&#39;mixed-format.emit.mode&#39;=&#39;log&#39;) */</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> id, name, ts <span style="color:#66d9ef">from</span> sourceTable;
 </span></span></code></pre></div><blockquote>
 <p>Currently, only the Apache Flink engine implements the dual-write LogStore and FileStore.</p>

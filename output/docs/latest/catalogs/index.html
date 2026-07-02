@@ -69,7 +69,7 @@
 
 
 <link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
-<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+<link href="../css/lato-font.css" rel="stylesheet" type="text/css">
 
 
 <link href="../css/termynal.css" rel="stylesheet">
@@ -203,7 +203,7 @@
                 
                 
                     <div class="topnav-page-selection">
-                        <a   href="https://amoro.apache.org/docs/latest/../../blogs/">blogs</a>
+                        <a   href="https://amoro.apache.org/docs/latest/../../blogs/">Blogs</a>
                     </div class="topnav-page-selection">
                 
                 
@@ -249,6 +249,10 @@
                             </li class="topnav-page-selection">
                         
                             <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://events.apache.org/">Events</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
                             <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
                             </li class="topnav-page-selection">
                         
@@ -277,6 +281,41 @@
             </div>
             </topsection>
     </nav>
+
+
+
+
+
+    
+
+    
+        
+            
+        
+            
+                
+                
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+    
+
+    
+
+    
+
+    
+
+    
+
+    
 
 <body dir=" ltr">
     <section>
@@ -614,7 +653,16 @@
 
             
             <div id="content" class="markdown-body">
-                <div class="margin-for-toc"><!--
+                <div class="margin-for-toc">
+                    
+                    <div class="latest-docs-note">
+                        <p>This documentation reflects the <code>latest</code> development version and may change before the next official release.</p>
+                        <p>
+                            For the latest stable documentation, see
+                            <a href="https://amoro.apache.org/docs/latest/../../docs/0.8.1/"><strong>0.8.1-incubating</strong></a>.
+                        </p>
+                    </div>
+                    <!--
  - Licensed to the Apache Software Foundation (ASF) under one or more
  - contributor license agreements.  See the NOTICE file distributed with
  - this work for additional information regarding copyright ownership.
@@ -635,7 +683,7 @@
 <p>A catalog is a metadata namespace that stores information about databases, tables, views, indexes, users, and UDFs. It provides a higher-level
 namespace for <code>table</code> and <code>database</code>. Typically, a catalog is associated with a specific type of data source or cluster. In Flink, Spark and Trino,
 the multi-catalog feature can be used to support SQL across data sources, such as:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-SQL" data-lang="SQL"><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> <span style="color:#66d9ef">c</span>.ID, <span style="color:#66d9ef">c</span>.NAME, <span style="color:#66d9ef">c</span>.AGE, o.AMOUNT
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-SQL" data-lang="SQL"><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> <span style="color:#66d9ef">c</span>.ID, <span style="color:#66d9ef">c</span>.NAME, <span style="color:#66d9ef">c</span>.AGE, o.AMOUNT
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> <span style="color:#960050;background-color:#1e0010">${</span>CATALOG_A<span style="color:#960050;background-color:#1e0010">}</span>.ONLINE.CUSTOMERS <span style="color:#66d9ef">c</span> <span style="color:#66d9ef">JOIN</span> <span style="color:#960050;background-color:#1e0010">${</span>CATALOG_B<span style="color:#960050;background-color:#1e0010">}</span>.OFFLINE.ORDERS o
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">ON</span> (<span style="color:#66d9ef">c</span>.ID <span style="color:#f92672">=</span> o.CUSTOMER_ID)
 </span></span></code></pre></div><p>In the past, data lakes were managed using the Hive Metastore (HMS) to handle metadata. Unfortunately, HMS does not support multi-catalog, which

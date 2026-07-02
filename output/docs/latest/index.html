@@ -32,7 +32,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta name="generator" content="Hugo 0.153.1">
+	<meta name="generator" content="Hugo 0.163.3">
 
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -72,7 +72,7 @@
 
 
 <link href="./font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
-<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+<link href="./css/lato-font.css" rel="stylesheet" type="text/css">
 
 
 <link href="./css/termynal.css" rel="stylesheet">
@@ -206,7 +206,7 @@
                 
                 
                     <div class="topnav-page-selection">
-                        <a   href="https://amoro.apache.org/docs/latest/../../blogs/">blogs</a>
+                        <a   href="https://amoro.apache.org/docs/latest/../../blogs/">Blogs</a>
                     </div class="topnav-page-selection">
                 
                 
@@ -252,6 +252,10 @@
                             </li class="topnav-page-selection">
                         
                             <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://events.apache.org/">Events</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
                             <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
                             </li class="topnav-page-selection">
                         
@@ -280,6 +284,41 @@
             </div>
             </topsection>
     </nav>
+
+
+
+
+
+    
+
+    
+        
+            
+        
+            
+                
+                
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+    
+
+    
+
+    
+
+    
+
+    
+
+    
 
 <body dir=" ltr">
     <section>
@@ -617,7 +656,16 @@
 
             
             <div id="content" class="markdown-body">
-                <div class="margin-for-toc"><!--
+                <div class="margin-for-toc">
+                    
+                    <div class="latest-docs-note">
+                        <p>This documentation reflects the <code>latest</code> development version and may change before the next official release.</p>
+                        <p>
+                            For the latest stable documentation, see
+                            <a href="https://amoro.apache.org/docs/latest/../../docs/0.8.1/"><strong>0.8.1-incubating</strong></a>.
+                        </p>
+                    </div>
+                    <!--
  - Licensed to the Apache Software Foundation (ASF) under one or more
  - contributor license agreements.  See the NOTICE file distributed with
  - this work for additional information regarding copyright ownership.
@@ -673,65 +721,65 @@ For details, please refer to: <a href="https://paimon.apache.org/docs/master/">P
 <h3 id="mixed-format">Mixed format</h3>
 <p>Amoro support multiple processing engines for Mixed format as below:</p>
 <table>
-  <thead>
-      <tr>
-          <th>Processing Engine</th>
-          <th>Version</th>
-          <th>Batch Read</th>
-          <th>Batch Write</th>
-          <th>Batch Overwrite</th>
-          <th>Streaming Read</th>
-          <th>Streaming Write</th>
-          <th>Create Table</th>
-          <th>Alter Table</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>Flink</td>
-          <td>1.16.x, 1.17.x, 1.18.x</td>
-          <td>✔</td>
-          <td>✔</td>
-          <td>✖</td>
-          <td>✔</td>
-          <td>✔</td>
-          <td>✔</td>
-          <td>✖</td>
-      </tr>
-      <tr>
-          <td>Spark</td>
-          <td>3.2, 3.3, 3.5</td>
-          <td>✔</td>
-          <td>✔</td>
-          <td>✔</td>
-          <td>✖</td>
-          <td>✖</td>
-          <td>✔</td>
-          <td>✔</td>
-      </tr>
-      <tr>
-          <td>Hive</td>
-          <td>2.x, 3.x</td>
-          <td>✔</td>
-          <td>✖</td>
-          <td>✔</td>
-          <td>✖</td>
-          <td>✖</td>
-          <td>✖</td>
-          <td>✔</td>
-      </tr>
-      <tr>
-          <td>Trino</td>
-          <td>406</td>
-          <td>✔</td>
-          <td>✖</td>
-          <td>✔</td>
-          <td>✖</td>
-          <td>✖</td>
-          <td>✖</td>
-          <td>✔</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Processing Engine</th>
+					<th>Version</th>
+					<th>Batch Read</th>
+					<th>Batch Write</th>
+					<th>Batch Overwrite</th>
+					<th>Streaming Read</th>
+					<th>Streaming Write</th>
+					<th>Create Table</th>
+					<th>Alter Table</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Flink</td>
+					<td>1.18.x, 1.19.x</td>
+					<td>✔</td>
+					<td>✔</td>
+					<td>✖</td>
+					<td>✔</td>
+					<td>✔</td>
+					<td>✔</td>
+					<td>✖</td>
+			</tr>
+			<tr>
+					<td>Spark</td>
+					<td>3.3, 3.4, 3.5</td>
+					<td>✔</td>
+					<td>✔</td>
+					<td>✔</td>
+					<td>✖</td>
+					<td>✖</td>
+					<td>✔</td>
+					<td>✔</td>
+			</tr>
+			<tr>
+					<td>Hive</td>
+					<td>2.x, 3.x</td>
+					<td>✔</td>
+					<td>✖</td>
+					<td>✔</td>
+					<td>✖</td>
+					<td>✖</td>
+					<td>✖</td>
+					<td>✔</td>
+			</tr>
+			<tr>
+					<td>Trino</td>
+					<td>406</td>
+					<td>✔</td>
+					<td>✖</td>
+					<td>✔</td>
+					<td>✖</td>
+					<td>✖</td>
+					<td>✖</td>
+					<td>✔</td>
+			</tr>
+	</tbody>
 </table>
 <h2 id="user-cases">User cases</h2>
 <h3 id="self-managed-streaming-lakehouse">Self-managed streaming Lakehouse</h3>
