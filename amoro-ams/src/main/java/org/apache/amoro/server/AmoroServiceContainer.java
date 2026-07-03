@@ -636,7 +636,15 @@ public class AmoroServiceContainer {
           Math.max(
               Runtime.getRuntime().availableProcessors() / 2,
               serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_COMMIT_THREAD_COUNT));
-      IcebergThreadPools.init(planningThreadPoolSize, commitThreadPoolSize);
+
+      int expirePlanningThreadPoolSize =
+              Math.max(
+                      Runtime.getRuntime().availableProcessors() / 2,
+                      serviceConfig.getInteger(
+                              AmoroManagementConf.TABLE_MANIFEST_IO_PLANNING_THREAD_COUNT));
+
+
+      IcebergThreadPools.init(planningThreadPoolSize, commitThreadPoolSize, expirePlanningThreadPoolSize);
     }
 
     private void initContainerConfig() {

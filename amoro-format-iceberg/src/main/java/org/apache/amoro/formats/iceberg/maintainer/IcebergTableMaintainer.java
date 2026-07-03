@@ -40,6 +40,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.ContentScanTask;
@@ -207,6 +208,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     ExpireSnapshots expireSnapshots =
         table
             .expireSnapshots()
+            .planWith(IcebergThreadPools.getExpirePlanningExecutor())
             .retainLast(Math.max(minCount, 1))
             .expireOlderThan(olderThan)
             .deleteWith(expiredFileCleaner::addFile)

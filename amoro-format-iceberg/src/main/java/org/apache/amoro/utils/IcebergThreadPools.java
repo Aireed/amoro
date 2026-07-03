@@ -28,6 +28,7 @@ public class IcebergThreadPools {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergThreadPools.class);
   private static volatile ExecutorService planningExecutor;
+  private static volatile ExecutorService expirePlanningExecutor;
   private static volatile ExecutorService commitExecutor;
 
   public static void init(int planningThreadPoolSize, int commitThreadPoolSize) {
@@ -64,6 +65,23 @@ public class IcebergThreadPools {
       }
     }
     return planningExecutor;
+  }
+
+  /**
+   * lazy create for this is optional。 only for expire snapshots planning
+   * @return
+   */
+  public static ExecutorService getExpirePlanningExecutor() {
+    if (expirePlanningExecutor == null) {
+      synchronized (IcebergThreadPools.class) {
+        if (expirePlanningExecutor == null) {
+          expirePlanningExecutor =
+                  ThreadPools.newWorkerPool(
+                          "iceberg-expire-planning-pool", Runtime.getRuntime().availableProcessors());
+        }
+      }
+    }
+    return expirePlanningExecutor;
   }
 
   public static ExecutorService getCommitExecutor() {
